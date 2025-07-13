@@ -1,0 +1,1 @@
+# Summarizer Django app 

@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Student - YouTube Video Summarizer{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="container">
+        <div class="hero-content">
+            <h2 class="hero-title">Transform YouTube Videos into Smart Study Notes</h2>
+            <p class="hero-subtitle">
+                Get instant AI-powered summaries, intelligent timestamps, and downloadable PDFs 
+                for any educational YouTube video.
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="form-section">
+    <div class="container">
+        <div class="form-card">
+            <form id="video-form" class="video-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="video-url" class="form-label">
+                        <i class="fas fa-link"></i>
+                        Paste YouTube URL
+                    </label>
+                    <input 
+                        type="url" 
+                        id="video-url" 
+                        name="video_url" 
+                        class="form-input"
+                        placeholder="https://www.youtube.com/watch?v=..."
+                        required
+                    >
+                    <div class="input-icon">
+                        <i class="fab fa-youtube"></i>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-large">
+                        <i class="fas fa-magic"></i>
+                        <span>Summarize Video</span>
+                    </button>
+                    
+                    <button type="button" class="btn btn-secondary btn-large" onclick="tryDemo()">
+                        <i class="fas fa-play"></i>
+                        <span>Try Demo</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="features-section">
+    <div class="container">
+        <h3 class="section-title">What You Get</h3>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <h4>Executive Summary</h4>
+                <p>Quick overview of the video's main points and key takeaways</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <h4>Smart Timestamps</h4>
+                <p>Intelligent section breaks with descriptive titles</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <h4>Full Summary</h4>
+                <p>Comprehensive breakdown of the entire video content</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-download"></i>
+                </div>
+                <h4>PDF Download</h4>
+                <p>Beautifully formatted PDF for offline study</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="stats-section">
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">10-20x</div>
+                <div class="stat-label">Faster Processing</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">100%</div>
+                <div class="stat-label">Free to Use</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">24/7</div>
+                <div class="stat-label">AI Available</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function tryDemo() {
+    window.location.href = "{% url 'summarizer:demo_video' %}";
+}
+
+document.getElementById('video-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const videoUrl = document.getElementById('video-url').value.trim();
+    if (!videoUrl) {
+        showError('Please enter a YouTube URL');
+        return;
+    }
+    
+    // Show loading overlay
+    document.getElementById('loading-overlay').style.display = 'flex';
+    
+    // Process video
+    fetch('{% url "summarizer:process_video" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            video_url: videoUrl
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Store data and redirect to results page
+            localStorage.setItem('videoResult', JSON.stringify(data.data));
+            window.location.href = '/result/';
+        } else {
+            showError(data.error, data.suggestions);
+        }
+    })
+    .catch(error => {
+        showError('Network error. Please try again.');
+    })
+    .finally(() => {
+        document.getElementById('loading-overlay').style.display = 'none';
+    });
+});
+
+function showError(message, suggestions = []) {
+    document.getElementById('error-message').textContent = message;
+    
+    const suggestionsDiv = document.getElementById('error-suggestions');
+    suggestionsDiv.innerHTML = '';
+    
+    if (suggestions.length > 0) {
+        const suggestionsList = document.createElement('ul');
+        suggestions.forEach(suggestion => {
+            const li = document.createElement('li');
+            li.textContent = suggestion;
+            suggestionsList.appendChild(li);
+        });
+        suggestionsDiv.appendChild(suggestionsList);
+    }
+    
+    document.getElementById('error-modal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('error-modal').style.display = 'none';
+}
+</script>
+{% endblock %} 

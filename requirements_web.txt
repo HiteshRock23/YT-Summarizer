@@ -1,0 +1,16 @@
+# Django Web Application Requirements
+Django==5.0.2
+python-dotenv==1.0.0
+
+# Core summarizer dependencies
+youtube-transcript-api==0.6.2
+google-generativeai==0.8.5
+together==0.2.11
+reportlab==4.0.7
+
+# Additional utilities
+requests==2.32.4
+Pillow==10.2.0
+
+# Development dependencies
+django-debug-toolbar==4.3.0 
