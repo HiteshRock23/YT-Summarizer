@@ -12,7 +12,7 @@ import requests
 from urllib.parse import urlparse, parse_qs
 import logging
 from llm_handler import MultiLLMHandler
-
+from django.shortcuts import render, redirect
 
 
 # Configure logging
@@ -205,6 +205,7 @@ class YouTubeSummarizer:
             # Check video accessibility first
             accessibility = self.check_video_accessibility(video_url)
             if not accessibility['accessible']:
+                logger.error(f"Video accessibility error: {accessibility['error_message']}")
                 return {
                     'success': False,
                     'error_code': accessibility['error_type'].upper(),
@@ -270,6 +271,7 @@ class YouTubeSummarizer:
             }
 
         except TranscriptsDisabled:
+            logger.error("Transcripts are disabled for this video.")
             return {
                 'success': False,
                 'error_code': 'TRANSCRIPTS_DISABLED',
@@ -277,6 +279,7 @@ class YouTubeSummarizer:
                 'suggestions': ['Try finding similar content with enabled subtitles']
             }
         except NoTranscriptFound:
+            logger.error("No transcripts found for this video.")
             return {
                 'success': False,
                 'error_code': 'NO_TRANSCRIPTS',
@@ -284,6 +287,7 @@ class YouTubeSummarizer:
                 'suggestions': ['Try videos with English subtitles']
             }
         except VideoUnavailable:
+            logger.error("Video is unavailable or restricted.")
             return {
                 'success': False,
                 'error_code': 'VIDEO_UNAVAILABLE',
@@ -291,6 +295,7 @@ class YouTubeSummarizer:
                 'suggestions': ['Check if video is public and accessible']
             }
         except ValueError as e:
+            logger.error(f"Invalid URL: {e}")
             return {
                 'success': False,
                 'error_code': 'INVALID_URL',
@@ -298,7 +303,12 @@ class YouTubeSummarizer:
                 'suggestions': ['Check the YouTube URL format']
             }
         except Exception as e:
+            import traceback
+            logger.error(f"Exception during subtitle extraction: {repr(e)}")
+            logger.error(traceback.format_exc())
             error_msg = str(e)
+            if hasattr(e, 'response') and e.response is not None:
+                logger.error(f"HTTP response content: {e.response.content}")
             if "restricted" in error_msg.lower():
                 return {
                     'success': False,
@@ -730,6 +740,7 @@ def process_video(video_url: str) -> Dict:
     """Main function to process video and return complete summary"""
     summarizer = YouTubeSummarizer()
     return summarizer.process_video(video_url)
+
 
 if __name__ == "__main__":
     # Test the system

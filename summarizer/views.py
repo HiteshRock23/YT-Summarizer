@@ -14,7 +14,7 @@ import time
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core_summarizer import process_video as process_video_core
-from pdf_generator import generate_pdf
+from pdf_generator import StudentPDFGenerator
 from llm_handler import MultiLLMHandler
 
 def home(request):
@@ -86,7 +86,7 @@ def download_pdf(request, filename):
             })
         
         # Generate PDF
-        pdf_content = generate_pdf(result)
+        pdf_content = StudentPDFGenerator().generate(result)
         
         # Create response
         response = HttpResponse(pdf_content, content_type='application/pdf')
@@ -150,3 +150,10 @@ def get_llm_status(request):
         return JsonResponse({
             'error': str(e)
         }) 
+    
+def result(request):
+    # Get the last result from session
+    result = request.session.get('last_result')
+    if not result:
+        return redirect('summarizer:home')
+    return render(request, 'summarizer/result_simple.html', result)

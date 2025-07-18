@@ -5,7 +5,7 @@ from typing import Dict, Optional
 from dotenv import load_dotenv
 import google.generativeai as genai
 import together
-from pdf_generator import generate_pdf  # ✅ Added PDF generation import
+from pdf_generator import StudentPDFGenerator
 
 # Load environment variables 
 load_dotenv()
@@ -152,7 +152,7 @@ class MultiLLMHandler:
     def generate_pdf_summary(self, title: str, sections: Dict[str, str], channel: str = "", duration: str = "", processing_time: float = 0.0, subtitle_extraction_time: float = 0.0) -> Optional[bytes]:
         """Generate a PDF summary using available content"""
         try:
-            return generate_pdf({
+            data = {
                 'title': title,
                 'timestamps': [{'time': k, 'title': v} for k, v in sections.items()],
                 'executive_summary': '\n'.join(sections.values()),
@@ -160,7 +160,9 @@ class MultiLLMHandler:
                 'duration': duration,
                 'processing_time': processing_time,
                 'subtitle_extraction_time': subtitle_extraction_time
-            })
+            }
+            pdf_bytes = StudentPDFGenerator().generate(data)
+            return pdf_bytes
         except Exception as e:
             logger.error(f"❌ PDF generation failed: {e}")
             return None

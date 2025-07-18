@@ -956,6 +956,12 @@ body {
 .hidden { display: none; }
 .visible { display: block; }
 
+.center {
+    justify-content: center !important;
+    align-items: center !important;
+    text-align: center !important;
+}
+
 /* ===== ANIMATIONS ===== */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(20px); }

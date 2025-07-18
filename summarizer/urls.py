@@ -8,4 +8,5 @@ urlpatterns = [
     path('process/', views.process_video, name='process_video'),
     path('download/<str:filename>/', views.download_pdf, name='download_pdf'),
     path('demo/', views.demo_video, name='demo_video'),
+       path('result/', views.result, name='result'),
 ] 
