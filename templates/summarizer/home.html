@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}AI Student - YouTube Video Summarizer{% endblock %}
+{% block title %}Summify - YouTube Video Summarizer{% endblock %}
 
 {% block content %}
 <div class="hero-section">
@@ -8,7 +8,7 @@
         <div class="hero-content">
             <h2 class="hero-title">Transform YouTube Videos into Smart Study Notes</h2>
             <p class="hero-subtitle">
-                Get instant AI-powered summaries, intelligent timestamps, and downloadable PDFs 
+                Get instant AI-powered summaries and intelligent timestamps 
                 for any educational YouTube video.
             </p>
         </div>
@@ -77,13 +77,6 @@
                 <p>Comprehensive breakdown of the entire video content</p>
             </div>
             
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="fas fa-download"></i>
-                </div>
-                <h4>PDF Download</h4>
-                <p>Beautifully formatted PDF for offline study</p>
-            </div>
         </div>
     </div>
 </div>
@@ -126,7 +119,7 @@ document.getElementById('video-form').addEventListener('submit', function(e) {
     // Show loading overlay
     document.getElementById('loading-overlay').style.display = 'flex';
     
-    // Process video
+    // Process video using standard method
     fetch('{% url "summarizer:process_video" %}', {
         method: 'POST',
         headers: {
@@ -179,3 +172,5 @@ function closeModal() {
 }
 </script>
 {% endblock %} 
+
+

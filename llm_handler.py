@@ -5,7 +5,6 @@ from typing import Dict, Optional
 from dotenv import load_dotenv
 import google.generativeai as genai
 import together
-from pdf_generator import StudentPDFGenerator
 
 # Load environment variables 
 load_dotenv()
@@ -60,7 +59,7 @@ class MultiLLMHandler:
             self.together_quota_exceeded = False
             logger.info("Together.ai quota reset - will try again")
 
-    def _call_gemini(self, prompt: str, max_retries: int = 3) -> Optional[str]:
+    def _call_gemini(self, prompt: str, max_retries: int = 2) -> Optional[str]:
         if not self.gemini_model or self.gemini_quota_exceeded:
             return None
 
@@ -125,47 +124,32 @@ class MultiLLMHandler:
 
         return None
 
-    def generate_content(self, prompt: str, task_type: str = "general") -> Optional[str]:
+    def generate_content(self, prompt: str, task_type: Optional[str] = None) -> Optional[str]:
+
         self._reset_quota_flags()
 
         if self.gemini_model and not self.gemini_quota_exceeded:
-            logger.info("🔄 Trying Gemini...")
+            logger.info("Trying Gemini...")
             result = self._call_gemini(prompt)
             if result:
-                logger.info("✅ Gemini successful")
+                logger.info("Gemini successful")
                 return result
             else:
-                logger.warning("❌ Gemini failed, trying Mistral-7B...")
+                logger.warning("Gemini failed, trying Mistral-7B...")
 
         if self.together_model and not self.together_quota_exceeded:
-            logger.info("🔄 Trying Mistral-7B via Together.ai...")
+            logger.info("Trying Mistral-7B via Together.ai...")
             result = self._call_mistral(prompt)
             if result:
-                logger.info("✅ Mistral-7B successful")
+                logger.info("Mistral-7B successful")
                 return result
             else:
-                logger.warning("❌ Mistral-7B failed")
+                logger.warning("Mistral-7B failed")
 
-        logger.error("❌ All LLM providers failed")
+        logger.error("All LLM providers failed")
         return None
 
-    def generate_pdf_summary(self, title: str, sections: Dict[str, str], channel: str = "", duration: str = "", processing_time: float = 0.0, subtitle_extraction_time: float = 0.0) -> Optional[bytes]:
-        """Generate a PDF summary using available content"""
-        try:
-            data = {
-                'title': title,
-                'timestamps': [{'time': k, 'title': v} for k, v in sections.items()],
-                'executive_summary': '\n'.join(sections.values()),
-                'channel': channel,
-                'duration': duration,
-                'processing_time': processing_time,
-                'subtitle_extraction_time': subtitle_extraction_time
-            }
-            pdf_bytes = StudentPDFGenerator().generate(data)
-            return pdf_bytes
-        except Exception as e:
-            logger.error(f"❌ PDF generation failed: {e}")
-            return None
+
 
     def get_status(self) -> Dict:
         return {

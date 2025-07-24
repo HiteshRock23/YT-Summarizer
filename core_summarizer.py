@@ -198,7 +198,7 @@ class YouTubeSummarizer:
 
     def extract_subtitles(self, video_url: str) -> Dict:
         """Extract subtitles using youtube-transcript-api with proper error handling"""
-        logger.info("📋 Extracting subtitles...")
+        logger.info("Extracting subtitles...")
         start_time = time.time()
 
         try:
@@ -259,7 +259,7 @@ class YouTubeSummarizer:
                     })
 
             processing_time = time.time() - start_time
-            logger.info(f"✅ Subtitles extracted in {processing_time:.2f}s")
+            logger.info(f"Subtitles extracted in {processing_time:.2f}s")
 
             return {
                 'success': True,
@@ -479,39 +479,72 @@ class YouTubeSummarizer:
             timestamps.append(timestamp)
         
         processing_time = time.time() - start_time
-        logger.info(f"✅ Timestamps generated in {processing_time:.2f}s")
+        logger.info(f"Timestamps generated in {processing_time:.2f}s")
         
         return timestamps
-
     def _generate_section_title(self, context_text: str, section_num: int) -> str:
-        """Generate descriptive title for a section using AI"""
+        """Generate a concise and descriptive title for a section using the LLM"""
         try:
-            prompt = f"""
-            Generate a concise, descriptive title (max 8 words) for this video section based on the content:
+            trimmed_text = context_text.strip()[:500].replace('\n', ' ')
             
-            Content: {context_text[:500]}...
-            
-            Requirements:
-            - Be specific and educational
-            - Use clear, academic language
-            - Focus on the main topic or concept
-            - Keep it under 8 words
-            
-            Title:"""
-            
-            title = self.llm_handler.generate_content(prompt, task_type="title")
-            
+            prompt = f"""You are an educational content assistant.
+
+Based on the following video section content, generate a clear, concise, and academic section title in **less than 8 words**.
+
+Content:
+\"\"\"{trimmed_text}\"\"\"
+
+Rules:
+- Be specific to the topic
+- Avoid generic words like 'Section' or 'Part'
+- No quotes or punctuation at the end
+
+Only respond with the section title."""
+
+            title = self.llm_handler.generate_content(prompt)
+
             if title:
-                # Clean up the title
-                title = re.sub(r'^["\']|["\']$', '', title)  # Remove quotes
-                title = title.split('\n')[0]  # Take first line only
+                # Clean and sanitize
+                title = title.strip().strip('"\'')
+                title = title.split('\n')[0]
+                title = re.sub(r'[^\w\s\-]', '', title)  # Remove special characters
                 return title if title else f"Section {section_num}"
             else:
                 return f"Section {section_num}"
-            
+
         except Exception as e:
             logger.warning(f"Failed to generate title for section {section_num}: {e}")
             return f"Section {section_num}"
+
+    # def _generate_section_title(self, context_text: str, section_num: int) -> str:
+    #     """Generate descriptive title for a section using AI"""
+    #     try:
+    #         prompt = f"""
+    #         Generate a concise, descriptive title (max 8 words) for this video section based on the content:
+            
+    #         Content: {context_text[:500]}...
+            
+    #         Requirements:
+    #         - Be specific and educational
+    #         - Use clear, academic language
+    #         - Focus on the main topic or concept
+    #         - Keep it under 8 words
+            
+    #         Title:"""
+            
+    #         title = self.llm_handler.generate_content(prompt, task_type="title")
+            
+    #         if title:
+    #             # Clean up the title
+    #             title = re.sub(r'^["\']|["\']$', '', title)  # Remove quotes
+    #             title = title.split('\n')[0]  # Take first line only
+    #             return title if title else f"Section {section_num}"
+    #         else:
+    #             return f"Section {section_num}"
+            
+    #     except Exception as e:
+    #         logger.warning(f"Failed to generate title for section {section_num}: {e}")
+    #         return f"Section {section_num}"
 
     def _seconds_to_timestamp(self, seconds: float) -> str:
         """Convert seconds to MM:SS format"""
@@ -598,7 +631,7 @@ class YouTubeSummarizer:
             
             if summary:
                 processing_time = time.time() - start_time
-                logger.info(f"✅ Full summary generated in {processing_time:.2f}s")
+                logger.info(f"Full summary generated in {processing_time:.2f}s")
                 return summary
             else:
                 return "Summary generation failed: All LLM providers unavailable"
@@ -609,7 +642,7 @@ class YouTubeSummarizer:
 
     def process_video(self, video_url: str) -> Dict:
         """Main processing pipeline for video summarization"""
-        logger.info("🚀 Starting video processing pipeline...")
+        logger.info("Starting video processing pipeline...")
         total_start_time = time.time()
         
         try:
@@ -656,7 +689,7 @@ class YouTubeSummarizer:
                 'subtitle_extraction_time': subtitle_result['processing_time']
             }
             
-            logger.info(f"✅ Video processing completed in {total_time:.2f}s")
+            logger.info(f"Video processing completed in {total_time:.2f}s")
             return response
             
         except Exception as e:
@@ -759,3 +792,95 @@ if __name__ == "__main__":
             print("\n💡 Suggestions:")
             for i, suggestion in enumerate(result['suggestions'], 1):
                 print(f"  {i}. {suggestion}")
+
+
+
+# import os
+# import time
+# import textwrap
+# from dotenv import load_dotenv
+# from youtube_transcript_api import YouTubeTranscriptApi
+# import google.generativeai as genai
+# import subprocess
+
+# # ✅ Load API Key
+# load_dotenv()
+# GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+# genai.configure(api_key=GOOGLE_API_KEY)
+# gemini_model = genai.GenerativeModel("gemini-1.5-flash")
+
+# # ✅ Get Transcript and Cache
+# def get_transcript(video_id, cache_dir="transcripts"):
+#     os.makedirs(cache_dir, exist_ok=True)
+#     file_path = os.path.join(cache_dir, f"{video_id}.txt")
+
+#     if os.path.exists(file_path):
+#         with open(file_path, "r", encoding="utf-8") as f:
+#             return f.read()
+
+#     transcript = YouTubeTranscriptApi.get_transcript(video_id)
+#     text = " ".join([segment["text"] for segment in transcript])
+
+#     with open(file_path, "w", encoding="utf-8") as f:
+#         f.write(text)
+
+#     return text
+
+# # ✅ Gemini Summarizer
+# def summarize_with_gemini(transcript):
+#     print("🔷 Trying Gemini 1.5 Flash...")
+#     prompt = f"""
+# You are a helpful assistant that summarizes long educational transcripts for students.
+
+# Summarize the following transcript clearly, using:
+# - Bullet points
+# - Headings for topics
+# - Simple and student-friendly language
+
+# Transcript:
+# {transcript[:25000]}
+# """
+#     try:
+#         response = gemini_model.generate_content(prompt)
+#         return response.text
+#     except Exception as e:
+#         print("❌ Gemini failed:", e)
+#         return None
+
+# # ✅ Mistral 7B via Ollama
+# def summarize_with_mistral(transcript):
+#     print("🔸 Falling back to Mistral 7B (Ollama)...")
+#     mistral_prompt = f"""
+# You are an assistant that summarizes transcripts for students. Make the summary clear and concise with bullet points.
+
+# Transcript:
+# {transcript[:4000]}
+# """
+
+#     result = subprocess.run(
+#         ["ollama", "run", "mistral"],
+#         input=mistral_prompt,
+#         text=True,
+#         capture_output=True
+#     )
+#     return result.stdout.strip() if result.returncode == 0 else "⚠️ Mistral summarization failed."
+
+# # ✅ Main Controller
+# def summarize_video(video_id):
+#     transcript = get_transcript(video_id)
+#     summary = summarize_with_gemini(transcript)
+#     if summary:
+#         print("✅ Gemini summary completed.")
+#         return summary
+#     else:
+#         summary = summarize_with_mistral(transcript)
+#         print("✅ Mistral fallback completed.")
+#         return summary
+
+# # ✅ Run
+# if __name__ == "__main__":
+#     video_id = "tRZGeaHPoaw"  # Change this to any YouTube video ID
+#     final_summary = summarize_video(video_id)
+
+#     print("\n📄 FINAL SUMMARY:\n")
+#     print(textwrap.fill(final_summary, width=100))

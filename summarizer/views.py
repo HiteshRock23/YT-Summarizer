@@ -2,19 +2,20 @@ import os
 import json
 import re
 from django.shortcuts import render, redirect
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, StreamingHttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from django.conf import settings
 import sys
 import time
+import threading
+from queue import Queue
 
 # Add the parent directory to Python path to import our modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core_summarizer import process_video as process_video_core
-from pdf_generator import StudentPDFGenerator
 from llm_handler import MultiLLMHandler
 
 def home(request):
@@ -46,7 +47,7 @@ def process_video(request):
         result = process_video_core(video_url)
         
         if result['success']:
-            # Store result in session for PDF download
+            # Store result in session
             request.session['last_result'] = result
             
             return JsonResponse({
@@ -74,31 +75,7 @@ def process_video(request):
             'error': f'An error occurred: {str(e)}'
         })
 
-def download_pdf(request, filename):
-    """Download generated PDF"""
-    try:
-        # Get the last result from session
-        result = request.session.get('last_result')
-        if not result:
-            return JsonResponse({
-                'success': False,
-                'error': 'No summary available for download'
-            })
-        
-        # Generate PDF
-        pdf_content = StudentPDFGenerator().generate(result)
-        
-        # Create response
-        response = HttpResponse(pdf_content, content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
-        
-        return response
-        
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': f'Failed to generate PDF: {str(e)}'
-        })
+
 
 def demo_video(request):
     """Demo video processing"""

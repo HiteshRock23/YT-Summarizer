@@ -73,30 +73,15 @@
                     <i class="fas fa-book-open"></i>
                     Full Summary
                 </h3>
+                <button class="copy-btn" onclick="copySummary()" title="Copy Summary">
+                    <i class="fas fa-copy"></i>
+                    <span class="copy-text">Copy</span>
+                </button>
             </div>
             <div class="card-content">
-                <div class="summary-text">
+                <div class="summary-text" id="summary-text">
                     {{ full_summary|linebreaks }}
                 </div>
-            </div>
-        </div>
-
-        <!-- Download Section -->
-        <div class="download-section">
-            <div class="download-card">
-                <div class="download-content">
-                    <div class="download-icon">
-                        <i class="fas fa-file-pdf"></i>
-                    </div>
-                    <div class="download-info">
-                        <h4>Download Summary as PDF</h4>
-                        <p>Get a beautifully formatted PDF with all the content for offline study</p>
-                    </div>
-                </div>
-                <button class="btn btn-primary btn-large" onclick="downloadPDF()">
-                    <i class="fas fa-download"></i>
-                    Download PDF
-                </button>
             </div>
         </div>
 
@@ -124,100 +109,74 @@ function scrollToSection(sectionNumber) {
     }
 }
 
-function downloadPDF() {
-    const filename = `summary_${encodeURIComponent('{{ video_title }}')}_${new Date().toISOString().slice(0,10)}.pdf`;
+function copySummary() {
+    const summaryText = document.getElementById('summary-text');
+    const copyBtn = document.querySelector('.copy-btn');
+    const copyIcon = copyBtn.querySelector('i');
+    const copyText = copyBtn.querySelector('.copy-text');
     
-    // Show loading state
-    const btn = event.target.closest('button');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating PDF...';
-    btn.disabled = true;
-    
-    // Make download request
-    fetch(`/download/${filename}/`, {
-        method: 'GET',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(response => {
-        if (response.ok) {
-            return response.blob();
-        } else {
-            throw new Error('PDF generation failed');
-        }
-    })
-    .then(blob => {
-        // Create download link
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+    if (summaryText) {
+        // Get the text content without HTML tags
+        const textToCopy = summaryText.innerText || summaryText.textContent;
         
-        // Show success message
-        showSuccessMessage('PDF downloaded successfully!');
-    })
-    .catch(error => {
-        console.error('Download error:', error);
-        showError('Failed to download PDF. Please try again.');
-    })
-    .finally(() => {
-        // Restore button
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-    });
-}
-
-function showSuccessMessage(message) {
-    // Create success notification
-    const notification = document.createElement('div');
-    notification.className = 'success-notification';
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: var(--success-color);
-        color: var(--text-primary);
-        padding: var(--spacing-md) var(--spacing-lg);
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-md);
-        z-index: 1001;
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-sm);
-        animation: slideInRight 0.3s ease-out;
-    `;
-    
-    notification.innerHTML = `
-        <i class="fas fa-check-circle"></i>
-        <span>${message}</span>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    // Remove after 3 seconds
-    setTimeout(() => {
-        notification.style.animation = 'slideOutRight 0.3s ease-out';
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
-            }
-        }, 300);
-    }, 3000);
-}
-
-function showError(message) {
-    const modal = document.getElementById('error-modal');
-    const messageEl = document.getElementById('error-message');
-    
-    if (modal && messageEl) {
-        messageEl.textContent = message;
-        modal.style.display = 'flex';
+        // Use the modern Clipboard API
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                // Success feedback
+                copyIcon.className = 'fas fa-check';
+                copyText.textContent = 'Copied!';
+                copyBtn.style.background = 'var(--success-color)';
+                
+                // Reset after 2 seconds
+                setTimeout(() => {
+                    copyIcon.className = 'fas fa-copy';
+                    copyText.textContent = 'Copy';
+                    copyBtn.style.background = '';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+                fallbackCopy(textToCopy);
+            });
+        } else {
+            // Fallback for older browsers
+            fallbackCopy(textToCopy);
+        }
     }
+}
+
+function fallbackCopy(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        document.execCommand('copy');
+        const copyBtn = document.querySelector('.copy-btn');
+        const copyIcon = copyBtn.querySelector('i');
+        const copyText = copyBtn.querySelector('.copy-text');
+        
+        // Success feedback
+        copyIcon.className = 'fas fa-check';
+        copyText.textContent = 'Copied!';
+        copyBtn.style.background = 'var(--success-color)';
+        
+        // Reset after 2 seconds
+        setTimeout(() => {
+            copyIcon.className = 'fas fa-copy';
+            copyText.textContent = 'Copy';
+            copyBtn.style.background = '';
+        }, 2000);
+    } catch (err) {
+        console.error('Fallback copy failed: ', err);
+        alert('Copy failed. Please select and copy the text manually.');
+    }
+    
+    document.body.removeChild(textArea);
 }
 </script>
 {% endblock %} 

@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Summary Results - AI Student{% endblock %}
+{% block title %}Summary Results - Summify{% endblock %}
 
 {% block content %}
 <div class="results-section">
@@ -91,24 +91,7 @@
             </div>
         </div>
 
-        <!-- Download Section -->
-        <div class="download-section">
-            <div class="download-card">
-                <div class="download-content">
-                    <div class="download-icon">
-                        <i class="fas fa-file-pdf"></i>
-                    </div>
-                    <div class="download-info">
-                        <h4>Download Summary as PDF</h4>
-                        <p>Get a beautifully formatted PDF with all the content for offline study</p>
-                    </div>
-                </div>
-                <button class="btn btn-primary btn-large" onclick="downloadPDF()">
-                    <i class="fas fa-download"></i>
-                    Download PDF
-                </button>
-            </div>
-        </div>
+
 
         <!-- Back to Home -->
         <div class="back-section">
@@ -189,50 +172,7 @@ function scrollToSection(sectionNumber) {
     }
 }
 
-function downloadPDF() {
-    const filename = `summary_${encodeURIComponent('{{ result.title }}')}_${new Date().toISOString().slice(0,10)}.pdf`;
-    
-    // Show loading state
-    const btn = event.target.closest('button');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating PDF...';
-    btn.disabled = true;
-    
-    // Make download request
-    fetch(`/download/${filename}/`, {
-        method: 'GET',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(response => {
-        if (response.ok) {
-            return response.blob();
-        } else {
-            throw new Error('PDF generation failed');
-        }
-    })
-    .then(blob => {
-        // Create download link
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-    })
-    .catch(error => {
-        console.error('Download error:', error);
-        alert('Failed to download PDF. Please try again.');
-    })
-    .finally(() => {
-        // Restore button
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-    });
-}
+
 
 // Add smooth scrolling for better UX
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
