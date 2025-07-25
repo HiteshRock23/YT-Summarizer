@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: ai-student-web
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn ai_student_web.wsgi
+    envVars:
+      - key: SECRET_KEY
+        value: your-super-secret-key
+      - key: DEBUG
+        value: false
